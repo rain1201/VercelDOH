@@ -1,8 +1,5 @@
 {
-  "name": "nextdns-proxy",
-  "version": "1.0.0",
+  "name": "vercel-doh-proxy",
   "private": true,
-  "scripts": {
-    "dev": "vercel dev"
-  }
+  "type": "module"
 }

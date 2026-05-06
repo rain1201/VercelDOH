@@ -19,7 +19,6 @@ export default async function handler(req) {
     });
   }
 
-  // 👉 构造上游 URL（关键：带 dns 参数）
   const targetUrl = dnsParam
     ? `https://dns.nextdns.io/${NEXTDNS_ID}?dns=${dnsParam}`
     : `https://dns.nextdns.io/${NEXTDNS_ID}`;
@@ -30,6 +29,7 @@ export default async function handler(req) {
     body = await req.arrayBuffer();
   }
 
+  // 👉 防止 fetch 卡死
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
 
@@ -46,7 +46,7 @@ export default async function handler(req) {
 
     clearTimeout(timeout);
 
-    // 👉 关键：不要用 stream
+    // 👉 关键：避免 stream 卡死
     const buffer = await upstream.arrayBuffer();
 
     return new Response(buffer, {
