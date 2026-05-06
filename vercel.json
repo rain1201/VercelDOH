@@ -4,14 +4,10 @@
     {
       "source": "/msd/(.*)",
       "destination": "/api/dns"
-    }
-  ],
-  "headers": [
+    },
     {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" }
-      ]
+      "source": "/msd",
+      "destination": "/api/dns"
     }
   ]
 }
