@@ -9,10 +9,10 @@ export default async function handler(req) {
     return new Response('NEXTDNS_ID not set', { status: 500 });
   }
 
-  const url = new URL(req.url);
+  // ✅ 修复点在这里
+  const url = new URL(req.url, `http://${req.headers.get('host')}`);
   const dnsParam = url.searchParams.get('dns');
 
-  // 👉 浏览器访问测试
   if (req.method === 'GET' && !dnsParam) {
     return new Response('NextDNS DoH Proxy OK', {
       headers: { 'content-type': 'text/plain' }
@@ -29,7 +29,6 @@ export default async function handler(req) {
     body = await req.arrayBuffer();
   }
 
-  // 👉 防止 fetch 卡死
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
 
@@ -46,7 +45,6 @@ export default async function handler(req) {
 
     clearTimeout(timeout);
 
-    // 👉 关键：避免 stream 卡死
     const buffer = await upstream.arrayBuffer();
 
     return new Response(buffer, {
