@@ -4,7 +4,17 @@ export const config = {
 
 export default async function handler(req) {
   // 替换为你自己的 NextDNS ID
-  const NEXTDNS_ID = 'eac521'; 
+  const NEXTDNS_ID = process.env.NEXTDNS_ID;
+
+  if (!NEXTDNS_ID) {
+    return new Response('Configuration Error: NEXTDNS_ID is missing.', { status: 500 });
+  }
+
+  // 1. 简单的路径/安全校验（防止被当成普通代理）
+  const contentType = req.headers.get('content-type');
+  if (req.method === 'POST' && contentType !== 'application/dns-message') {
+    return new Response('Not Found', { status: 404 });
+  }
   const targetUrl = `https://dns.nextdns.io/${NEXTDNS_ID}`;
 
   // 复制原始请求的 Body (DoH 包含 POST 数据)
