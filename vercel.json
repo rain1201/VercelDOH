@@ -1,13 +1,6 @@
 {
-  "version": 2,
-  "rewrites": [
-    {
-      "source": "/msd/(.*)",
-      "destination": "/api/dns.js"
-    },
-    {
-      "source": "/msd",
-      "destination": "/api/dns.js"
-    }
+  "routes": [
+    { "src": "^/msd$", "dest": "/api/dns.js" },
+    { "src": "^/msd/(.*)", "dest": "/api/dns.js" }
   ]
 }
