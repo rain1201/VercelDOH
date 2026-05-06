@@ -9,8 +9,8 @@ export default async function handler(req) {
     return new Response('NEXTDNS_ID not set', { status: 500 });
   }
 
-  // ✅ 修复点在这里
-  const url = new URL(req.url, `http://${req.headers.get('host')}`);
+  // ✅ Node 环境正确写法
+  const url = new URL(req.url, `http://${req.headers['host']}`);
   const dnsParam = url.searchParams.get('dns');
 
   if (req.method === 'GET' && !dnsParam) {
@@ -36,8 +36,8 @@ export default async function handler(req) {
     const upstream = await fetch(targetUrl, {
       method: req.method,
       headers: {
-        'content-type': req.headers.get('content-type') || 'application/dns-message',
-        'accept': req.headers.get('accept') || 'application/dns-message',
+        'content-type': req.headers['content-type'] || 'application/dns-message',
+        'accept': req.headers['accept'] || 'application/dns-message',
       },
       body,
       signal: controller.signal,
