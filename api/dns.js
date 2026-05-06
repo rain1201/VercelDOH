@@ -9,25 +9,16 @@ export default async function handler(req) {
     return new Response('NEXTDNS_ID not set', { status: 500 });
   }
 
-  // ✅ Node 环境正确写法
-  const url = new URL(req.url, `http://${req.headers['host']}`);
+  const url = new URL(req.url, 'http://localhost');
   const dnsParam = url.searchParams.get('dns');
 
   if (req.method === 'GET' && !dnsParam) {
-    return new Response('NextDNS DoH Proxy OK', {
-      headers: { 'content-type': 'text/plain' }
-    });
+    return new Response('NextDNS DoH Proxy OK');
   }
 
   const targetUrl = dnsParam
     ? `https://dns.nextdns.io/${NEXTDNS_ID}?dns=${dnsParam}`
     : `https://dns.nextdns.io/${NEXTDNS_ID}`;
-
-  let body = null;
-
-  if (req.method === 'POST') {
-    body = await req.arrayBuffer();
-  }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
@@ -39,7 +30,8 @@ export default async function handler(req) {
         'content-type': req.headers['content-type'] || 'application/dns-message',
         'accept': req.headers['accept'] || 'application/dns-message',
       },
-      body,
+      // ✅ 关键：直接透传 req（不要 arrayBuffer）
+      body: req.method === 'POST' ? req : undefined,
       signal: controller.signal,
     });
 
@@ -51,16 +43,11 @@ export default async function handler(req) {
       status: upstream.status,
       headers: {
         'content-type': 'application/dns-message',
-        'cache-control':
-          upstream.headers.get('cache-control') || 'public, max-age=60',
       },
     });
 
   } catch (err) {
     clearTimeout(timeout);
-
-    return new Response(`Fetch error: ${err.message}`, {
-      status: 502,
-    });
+    return new Response(`Fetch error: ${err.message}`, { status: 502 });
   }
 }
