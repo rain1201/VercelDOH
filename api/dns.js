@@ -2,56 +2,67 @@ export const config = {
   runtime: 'nodejs',
 };
 
-export default async function handler(req, res) {
+export default async function handler(req) {
   const NEXTDNS_ID = process.env.NEXTDNS_ID;
 
   if (!NEXTDNS_ID) {
-    res.status(500).send('NEXTDNS_ID not set');
-    return;
+    return new Response('NEXTDNS_ID not set', { status: 500 });
   }
 
-  const url = new URL(req.url, `http://${req.headers.host}`);
+  const url = new URL(req.url);
   const dnsParam = url.searchParams.get('dns');
 
   // 👉 浏览器访问测试
   if (req.method === 'GET' && !dnsParam) {
-    res.status(200).send('NextDNS Proxy OK');
-    return;
+    return new Response('NextDNS DoH Proxy OK', {
+      headers: { 'content-type': 'text/plain' }
+    });
   }
 
+  // 👉 构造上游 URL（关键：带 dns 参数）
   const targetUrl = dnsParam
     ? `https://dns.nextdns.io/${NEXTDNS_ID}?dns=${dnsParam}`
     : `https://dns.nextdns.io/${NEXTDNS_ID}`;
 
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+  let body = null;
 
+  if (req.method === 'POST') {
+    body = await req.arrayBuffer();
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
+  try {
     const upstream = await fetch(targetUrl, {
       method: req.method,
       headers: {
-        'content-type': req.headers['content-type'] || 'application/dns-message',
-        'accept': req.headers['accept'] || 'application/dns-message',
+        'content-type': req.headers.get('content-type') || 'application/dns-message',
+        'accept': req.headers.get('accept') || 'application/dns-message',
       },
-      body: req.method === 'POST' ? req : undefined,
+      body,
       signal: controller.signal,
     });
 
     clearTimeout(timeout);
 
-    // 👉 关键：不要用 stream，直接读完
+    // 👉 关键：不要用 stream
     const buffer = await upstream.arrayBuffer();
 
-    res.status(upstream.status);
-    res.setHeader('Content-Type', 'application/dns-message');
-    res.setHeader(
-      'Cache-Control',
-      upstream.headers.get('cache-control') || 'public, max-age=60'
-    );
-
-    res.send(Buffer.from(buffer));
+    return new Response(buffer, {
+      status: upstream.status,
+      headers: {
+        'content-type': 'application/dns-message',
+        'cache-control':
+          upstream.headers.get('cache-control') || 'public, max-age=60',
+      },
+    });
 
   } catch (err) {
-    res.status(502).send(`Fetch error: ${err.message}`);
+    clearTimeout(timeout);
+
+    return new Response(`Fetch error: ${err.message}`, {
+      status: 502,
+    });
   }
 }

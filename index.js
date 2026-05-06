@@ -2,13 +2,17 @@ export const config = {
   runtime: 'nodejs',
 };
 
-export default function handler(req, res) {
-  res.status(200).json({
+export default async function handler(req) {
+  return new Response(JSON.stringify({
     status: "ok",
     message: "Vercel function is working",
     method: req.method,
     url: req.url,
-    headers: req.headers,
     time: new Date().toISOString()
+  }), {
+    status: 200,
+    headers: {
+      "content-type": "application/json"
+    }
   });
 }
