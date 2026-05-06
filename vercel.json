@@ -3,11 +3,11 @@
   "rewrites": [
     {
       "source": "/msd/(.*)",
-      "destination": "/api/dns"
+      "destination": "/api/dns.js"
     },
     {
       "source": "/msd",
-      "destination": "/api/dns"
+      "destination": "/api/dns.js"
     }
   ]
 }
